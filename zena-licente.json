@@ -1,4 +1,4 @@
 {
-    "test-01": { "status": "blocat", "expira": "2040-08-02" },
+    "test-01": { "status": "activ", "expira": "2040-08-02" },
     "alexa-01": { "status": "activ", "expira": "2040-08-02" }
 }
