@@ -1,5 +1,6 @@
 {
     "test-01": { "status": "activ", "expira": "2040-08-02" },
     "alexa-01": { "status": "activ", "expira": "2040-08-02" },
-    "mihaela-01": { "status": "activ", "expira": "2040-08-02" }
+    "mihaela-01": { "status": "activ", "expira": "2040-08-02" },
+    "victor-01": { "status": "activ", "expira": "2040-08-02" }
 }
