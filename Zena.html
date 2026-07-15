@@ -9,6 +9,7 @@
 <!-- Zena v3 — calendar lunar, acțiuni colorate, clienți -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@15.1.0/dist/twemoji.min.js" crossorigin="anonymous"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,7 +22,8 @@
   --shadow:0 2px 14px rgba(90,100,90,.06);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+img.emoji{height:1em;width:1em;margin:0 .06em 0 .08em;vertical-align:-0.12em;display:inline-block}
+body{font-family:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;font-weight:500;background:var(--bg);color:var(--ink);min-height:100vh}
 h1,h2,h3{font-weight:600}
 
 /* ---------- layout ---------- */
@@ -34,9 +36,9 @@ aside{background:var(--card);border-right:1px solid var(--line);padding:28px 18p
 .logo .zena-logo-img{height:40px;width:auto;display:block}
 .welcome-card .big .zena-logo-img{height:74px;width:auto;display:block}
 .tagline{font-size:12px;color:var(--ink-soft);margin-bottom:26px}
-.nav-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;border-radius:12px;font-size:14.5px;color:var(--ink);cursor:pointer;text-align:left;transition:background .15s}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;border-radius:12px;font-size:14.5px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left;transition:background .15s}
 .nav-btn:hover{background:var(--bg)}
-.nav-btn.active{background:var(--sage);color:#41543f;font-weight:600}
+.nav-btn.active{background:var(--sage);color:#41543f;font-weight:700}
 .side-foot{margin-top:auto;font-size:11.5px;color:var(--ink-soft);line-height:1.6}
 .side-foot button{border:none;background:none;color:var(--sage-deep);cursor:pointer;font-size:11.5px;text-decoration:underline;padding:0}
 .side-foot .ig-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:var(--sage-deep);text-decoration:none;font-size:12px;transition:opacity .15s}
@@ -301,7 +303,8 @@ function initials(name){ return String(name||'?').split(/\s+/).map(w=>w[0]).slic
 const AV_COLORS = ['#a8c3a0','#b3a8d1','#d9b08c','#c99a9a','#9ab8c9','#c9b89a'];
 function avColor(name){ let h=0; for(const c of String(name)) h=(h*31+c.charCodeAt(0))>>>0; return AV_COLORS[h%AV_COLORS.length]; }
 function money(n){ return (n||0).toLocaleString('ro-RO') + ' lei'; }
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); }
+function twemojify(node){ try{ if (window.twemoji) twemoji.parse(node||document.body, {folder:'svg', ext:'.svg', base:'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/'}); }catch(e){} }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; twemojify(t); t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); }
 function actColor(name){ const a = ACTIONS.find(x=>norm(x.name)===norm(name)); return a ? a.color : '#e8e8e4'; }
 
 /* ============ citirea folderului ============ */
@@ -336,6 +339,7 @@ function lockApp(exp){
     Scrie-ne ca să reactivăm aplicația.</p>
     <a class="btn" href="mailto:${LICENTA.contact}?subject=Zena%20-%20reactivare">✉️ Contactează-ne</a>
   </div></div>`;
+  twemojify();
 }
 async function checkLicense(){
   const KEY = 'zena_lic_' + LICENTA.id;
@@ -516,6 +520,7 @@ function finishLoad(wbData, fileName, notes, files){
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('app').classList.add('on');
   render();
+  twemojify();
   checkUpdate(false);
 }
 
@@ -619,7 +624,7 @@ async function afterChange(msg){
 
 /* ============ modale ============ */
 function openModal(html){ document.getElementById('modalHost').innerHTML =
-  `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
+  `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; twemojify(document.getElementById('modalHost')); }
 function closeModal(){ document.getElementById('modalHost').innerHTML=''; }
 function fval(id){ return document.getElementById(id).value.trim(); }
 
@@ -1075,6 +1080,7 @@ function render(){
   else if (view==='calendar') m.innerHTML = banner + `<div class="topbar"><h2>Calendar</h2>${canWrite?'<button class="btn small" onclick="sessionForm()">＋ Ședință</button>':''}</div>` + rMonth();
   else if (view==='payments') m.innerHTML = banner + rPayments();
   else if (view==='patient') m.innerHTML = banner + rPatient(currentPatient);
+  twemojify(m);
 }
 
 /* ---- alerte ---- */
