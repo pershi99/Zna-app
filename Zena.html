@@ -10,6 +10,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@15.1.0/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<!-- id-ul terapeutului (window.ZENA_ID). Fișier local, opțional; nu e atins de update. -->
+<script src="zena-cont.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -258,13 +260,18 @@ const DEFAULT_ACTIONS = [
   {name:'De programat', color:'#d4e6d2'}
 ];
 
-/* ============ SETARI LICENTA — modifica aici pentru fiecare copie trimisa ============
-   id          = identificatorul acestei copii (unic per terapeut, ex. 'test-maria-01')
-   url         = adresa fisierului JSON cu licentele (GitHub Gist raw). Gol = fara verificare online.
+/* ============ SETARI LICENTA ============
+   id          = vine din fisierul zena-cont.js (window.ZENA_ID) — NU se modifica aici.
+                 Pentru fiecare terapeut, pui id-ul lui in zena-cont.js din folderul lui.
+   url         = adresa fisierului JSON cu licentele (GitHub raw). Gol = fara verificare online.
    expiraLocal = data la care copia se blocheaza singura, chiar si offline (AAAA-LL-ZZ). Gol = niciodata.
    contact     = emailul afisat pe ecranul de blocare. */
+/* id-ul acestei copii — UNIC per terapeut. Vine din fișierul zena-cont.js din folderul
+   terapeutului (window.ZENA_ID). Acel fișier NU e atins de update, deci id-ul rămâne mereu.
+   Dacă zena-cont.js lipsește, se folosește valoarea de rezervă de mai jos. */
+const LICENTA_ID = (typeof window !== 'undefined' && typeof window.ZENA_ID === 'string' && window.ZENA_ID.trim()) ? window.ZENA_ID.trim() : 'test-01';
 const LICENTA = {
-  id: 'test-01',
+  id: LICENTA_ID,
   url: 'https://raw.githubusercontent.com/pershi99/Zna-app/main/zena-licente.json',
   expiraLocal: '2026-08-02',
   contact: 'persiofficial@gmail.com'
