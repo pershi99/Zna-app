@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zena — spațiul tău de lucru</title>
+<link rel="icon" type="image/png" href="zena-badge-icon.png">
+
+<!-- Zena v3 — calendar lunar, acțiuni colorate, clienți -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbfbf9; --card:#ffffff; --ink:#3d4440; --ink-soft:#8a938d;
+  --sage:#dde8dc; --sage-deep:#7fa383; --lavender:#e6e2f0; --lavender-deep:#8d84b8;
+  --peach:#f7e8dd; --peach-deep:#cf9c76; --rose:#f5e3e3; --rose-deep:#c78989;
+  --line:#eeeeea; --radius:18px;
+  --shadow:0 2px 14px rgba(90,100,90,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+h1,h2,h3{font-weight:600}
+
+/* ---------- layout ---------- */
+.app{display:none;grid-template-columns:230px 1fr;min-height:100vh}
+.app.on{display:grid}
+aside{background:var(--card);border-right:1px solid var(--line);padding:28px 18px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:27px;letter-spacing:.3px;color:var(--sage-deep);margin-bottom:2px}
+.logo .zena-badge{width:34px;height:34px;flex:none}
+.logo span{color:var(--ink)}
+.logo .zena-logo-img{height:40px;width:auto;display:block}
+.welcome-card .big .zena-logo-img{height:74px;width:auto;display:block}
+.tagline{font-size:12px;color:var(--ink-soft);margin-bottom:26px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;border-radius:12px;font-size:14.5px;color:var(--ink);cursor:pointer;text-align:left;transition:background .15s}
+.nav-btn:hover{background:var(--bg)}
+.nav-btn.active{background:var(--sage);color:#41543f;font-weight:600}
+.side-foot{margin-top:auto;font-size:11.5px;color:var(--ink-soft);line-height:1.6}
+.side-foot button{border:none;background:none;color:var(--sage-deep);cursor:pointer;font-size:11.5px;text-decoration:underline;padding:0}
+.side-foot .ig-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:var(--sage-deep);text-decoration:none;font-size:12px;transition:opacity .15s}
+.side-foot .ig-link:hover{opacity:.7}
+.side-foot .ig-link svg{width:16px;height:16px;flex:none}
+.side-foot .powered{margin-top:10px;font-size:10.5px;color:var(--ink-soft)}
+.upd-btn{display:block;width:100%;margin:8px 0 2px;background:var(--sage-deep);color:#fff;border:none;border-radius:10px;padding:9px 12px;font-size:12.5px;cursor:pointer;text-align:left;text-decoration:none;line-height:1.3}
+.upd-btn:hover{opacity:.9}
+.upd-note{font-size:11px;color:var(--ink-soft);margin-bottom:4px;line-height:1.45}
+main{padding:34px 42px;max-width:1180px;width:100%}
+
+/* ---------- welcome ---------- */
+.welcome{display:flex;min-height:100vh;align-items:center;justify-content:center}
+.welcome-card{background:var(--card);border-radius:26px;box-shadow:var(--shadow);padding:56px 60px;text-align:center;max-width:520px}
+.welcome-card .big{display:flex;align-items:center;justify-content:center;gap:12px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:46px;color:var(--sage-deep);margin-bottom:6px}
+.welcome-card .big .zena-badge{width:56px;height:56px;flex:none}
+.welcome-card p{color:var(--ink-soft);font-size:15px;line-height:1.7;margin:14px 0 28px}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--sage-deep);color:#fff;border:none;border-radius:14px;padding:13px 26px;font-size:14.5px;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn.ghost{background:none;color:var(--sage-deep);border:1.5px solid var(--sage-deep)}
+.btn.small{padding:8px 16px;font-size:13px;border-radius:11px}
+.btn.subtle{background:var(--sage);color:#41543f}
+.hint{font-size:12.5px;color:var(--ink-soft);margin-top:18px}
+
+/* ---------- cards & general ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+.grid{display:grid;gap:18px}
+.stats{grid-template-columns:repeat(4,1fr)}
+.stat{padding:20px 22px;border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat .n{font-size:30px;font-weight:600;margin-top:4px}
+.stat .l{font-size:12.5px;color:var(--ink-soft)}
+.s-sage{background:linear-gradient(135deg,#fff, var(--sage))}
+.s-lav{background:linear-gradient(135deg,#fff, var(--lavender))}
+.s-peach{background:linear-gradient(135deg,#fff, var(--peach))}
+.s-rose{background:linear-gradient(135deg,#fff, var(--rose))}
+.section-title{font-size:17px;margin:30px 0 14px;display:flex;align-items:center;gap:10px;font-weight:600}
+.pill{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600;white-space:nowrap}
+.p-activ{background:var(--sage);color:#41543f}
+.p-pauză,.p-pauza{background:var(--peach);color:#8a5f3d}
+.p-încheiat,.p-incheiat{background:var(--line);color:var(--ink-soft)}
+.p-provizoriu{background:#e5eef2;color:#4d7183}
+.p-neplatit{background:var(--rose);color:#8f4d4d}
+.p-platit{background:var(--sage);color:#41543f}
+.muted{color:var(--ink-soft)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.act-pill{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600;white-space:nowrap;color:#4a4038;cursor:pointer;border:none;display:inline-block}
+.act-pill.none{background:none;border:1.5px dashed var(--line);color:var(--ink-soft)}
+.act-pill:hover{filter:brightness(.96)}
+
+/* ---------- tables/lists ---------- */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:13px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.click{cursor:pointer;transition:background .12s}
+tr.click:hover{background:var(--bg)}
+.search{width:100%;max-width:340px;padding:11px 16px;border:1px solid var(--line);border-radius:12px;font-size:14px;background:var(--card);outline:none}
+.search:focus{border-color:var(--sage-deep)}
+.avatar{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;margin-right:10px;flex-shrink:0}
+.iconbtn{border:none;background:none;cursor:pointer;font-size:14px;color:var(--ink-soft);padding:4px 7px;border-radius:8px}
+.iconbtn:hover{background:var(--bg);color:var(--ink)}
+
+/* ---------- calendar lunar ---------- */
+.cal-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.cal-head .navb{border:none;background:var(--card);box-shadow:var(--shadow);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:13px;color:var(--ink)}
+.cal-head .navb:hover{background:var(--sage)}
+.cal-sel{padding:8px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--card);outline:none;cursor:pointer;font-family:inherit}
+.dowrow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px}
+.dowrow div{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);text-align:center}
+.month{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.mday{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:8px;min-height:92px;font-size:12px}
+.mday.blank{background:none;box-shadow:none}
+.mday.today{outline:2px solid var(--sage-deep)}
+.mday.past{opacity:.72}
+.mday .dn{font-size:13px;font-weight:600;margin-bottom:5px;color:var(--ink-soft)}
+.mday.today .dn{color:var(--sage-deep)}
+.sess{background:var(--lavender);border-radius:8px;padding:4px 7px;font-size:11.5px;margin-bottom:4px;cursor:pointer;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sess:hover{background:var(--sage)}
+.sess.prov{background:#eef4f7;border:1px dashed #9ab8c9}
+.sess.prov:hover{background:#e0edf2}
+.sess b{margin-right:4px}
+.addday{border:1.5px dashed var(--line);background:none;border-radius:8px;width:100%;padding:2px;color:var(--ink-soft);cursor:pointer;font-size:13px;line-height:1.2}
+.addday:hover{border-color:var(--sage-deep);color:var(--sage-deep)}
+
+/* ---------- alerts ---------- */
+.alert{display:flex;gap:12px;align-items:flex-start;background:var(--card);border-left:4px solid var(--peach-deep);border-radius:12px;box-shadow:var(--shadow);padding:14px 18px;margin-bottom:10px;font-size:14px;cursor:pointer}
+.alert:hover{background:var(--bg)}
+
+/* ---------- client detail ---------- */
+.back{border:none;background:none;color:var(--sage-deep);cursor:pointer;font-size:14px;margin-bottom:18px;padding:0}
+.p-head{display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap}
+.p-head .avatar{width:58px;height:58px;font-size:20px}
+.p-head h2{font-size:24px}
+.p-head .diag{color:var(--ink-soft);font-size:14px;margin-top:3px}
+.detail-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:20px;align-items:start}
+.info-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px}
+.info-row:last-child{border:none}
+.info-row .k{color:var(--ink-soft);flex-shrink:0}
+.editable{cursor:pointer;border-bottom:1px dashed transparent;transition:all .12s;text-align:right}
+.editable:hover{border-bottom-color:var(--sage-deep);color:var(--sage-deep)}
+.editable.dim{color:var(--ink-soft);font-style:italic}
+.inline-input{flex:1;padding:6px 10px;border:1px solid var(--sage-deep);border-radius:8px;font-size:13.5px;font-family:inherit;background:var(--bg);outline:none;resize:vertical}
+.notes{font-size:14.5px;line-height:1.75}
+.notes h1{font-size:19px;margin:0 0 12px;color:var(--sage-deep)}
+.notes h2{font-size:15.5px;margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.notes ul{margin:6px 0 6px 20px}
+.notes p{margin:7px 0}
+.notes strong{color:#41543f}
+.files li{list-style:none;padding:8px 12px;background:var(--bg);border-radius:9px;margin-bottom:6px;font-size:13.5px}
+.tabs{display:flex;gap:8px}
+.tab{border:none;background:var(--bg);padding:8px 16px;border-radius:99px;font-size:13px;cursor:pointer;color:var(--ink)}
+.tab.active{background:var(--sage);font-weight:600;color:#41543f}
+.empty{text-align:center;color:var(--ink-soft);padding:40px 0;font-size:14px}
+.notes-edit{width:100%;min-height:420px;border:1px solid var(--line);border-radius:12px;padding:16px;font-family:Consolas,monospace;font-size:13.5px;line-height:1.6;resize:vertical;outline:none;background:var(--bg)}
+.notes-edit:focus{border-color:var(--sage-deep)}
+/* ---------- temă activă & chestionare ---------- */
+.theme-active{background:linear-gradient(135deg,#fff,var(--sage));border-radius:12px;padding:14px 16px}
+.theme-txt{font-size:15px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap}
+.theme-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.theme-hist-title{font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.theme-hist{font-size:13.5px;padding:8px 0;border-bottom:1px solid var(--line);line-height:1.5}
+.theme-hist:last-child{border:none}
+.q-group{margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.q-group:last-child{border:none;margin-bottom:0;padding-bottom:0}
+.q-head{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.q-rows{margin-top:6px}
+.q-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0}
+.q-single{font-size:13.5px;color:var(--ink);padding:10px 0}
+
+/* ---------- modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(61,68,64,.35);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{background:var(--card);border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.15);padding:32px;width:100%;max-width:480px;max-height:92vh;overflow:auto}
+.modal h3{margin-bottom:20px;font-size:19px}
+.f-row{margin-bottom:14px}
+.f-row label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:5px}
+.f-row input,.f-row select,.f-row textarea{width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:var(--bg);outline:none}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--sage-deep)}
+.f-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.m-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+.act-opt{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:12px;padding:12px 16px;font-size:14px;cursor:pointer;margin-bottom:8px;text-align:left;color:#4a4038;font-weight:600}
+.act-opt:hover{filter:brightness(.95)}
+.act-opt.none{background:var(--bg);color:var(--ink-soft);font-weight:400}
+.ae-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ae-row input[type=text]{flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg);outline:none}
+.ae-row input[type=color]{width:42px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--card);cursor:pointer;padding:2px}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:.94}
+.ro-banner{background:var(--peach);color:#8a5f3d;border-radius:12px;padding:10px 16px;font-size:13px;margin-bottom:18px}
+@media(max-width:900px){.app.on{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.stats{grid-template-columns:repeat(2,1fr)}.detail-grid{grid-template-columns:1fr}.mday{min-height:60px}}
+</style>
+</head>
+<body>
+
+<!-- ecran de start -->
+<div class="welcome" id="welcome">
+  <div class="welcome-card">
+    <div class="big"><img class="zena-logo-img" src="zena-logo.png" alt="zena"></div>
+    <div class="muted" style="font-size:14px">spațiul tău calm de lucru</div>
+    <p>Alege folderul <b>Zena</b> de pe calculatorul tău — cel care conține fișierul Excel cu clienții și folderele acestora. Datele rămân doar pe calculatorul tău.</p>
+    <button class="btn" id="pickBtn">Deschide folderul Zena</button>
+    <div id="fallbackWrap" style="display:none;margin-top:14px">
+      <label class="btn ghost" style="cursor:pointer">Alege folderul
+        <input type="file" id="dirInput" webkitdirectory multiple style="display:none">
+      </label>
+    </div>
+    <div class="hint" id="welcomeHint">Recomandat: Chrome sau Edge. Zena reține folderul pentru data viitoare.</div>
+  </div>
+</div>
+
+<!-- aplicatia -->
+<div class="app" id="app">
+  <aside>
+    <div class="logo"><img class="zena-logo-img" src="zena-logo.png" alt="zena"></div>
+    <div class="tagline">spațiul tău calm de lucru</div>
+    <button class="nav-btn active" data-view="dashboard" onclick="nav('dashboard')">🏠 Acasă</button>
+    <button class="nav-btn" data-view="patients" onclick="nav('patients')">👥 Clienți</button>
+    <button class="nav-btn" data-view="calendar" onclick="nav('calendar')">📅 Calendar</button>
+    <button class="nav-btn" data-view="payments" onclick="nav('payments')">💳 Plăți</button>
+    <div class="side-foot">
+      <div id="srcInfo"></div>
+      <div id="updInfo"></div>
+      <button onclick="reload()">↻ Reîncarcă datele</button>
+      <button onclick="checkUpdate(true)">⬆️ Verifică actualizări</button>
+      <a class="ig-link" href="https://www.instagram.com/hiveacademy.ai/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/>
+          <circle cx="17.6" cy="6.4" r="1.3" fill="currentColor"/>
+        </svg>
+        hiveacademy.ai
+      </a>
+      <div class="powered">powered by Resurse Autonome Avansate</div>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<div id="modalHost"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ============ stare ============ */
+/* RAW = sursa de adevar (oglinda Excelului). DB = date calculate pentru afisare. */
+let RAW = { patients: [], sessions: [], themes: [], quizzes: [] };
+let ACTIONS = []; /* [{name, color}] — sheet Actiuni */
+let DB = { patients: [], notes: {}, files: {}, fileName: '' };
+let dirHandle = null, canWrite = false, backedUp = false, clientDirName = 'Clienti';
+let view = 'dashboard', currentPatient = null, editingNotes = false, editingInfo = false;
+const TODAY = startOfDay(new Date());
+let selY = TODAY.getFullYear(), selM = TODAY.getMonth(); /* luna selectata in calendar */
+const MONTHS = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+const MONTHS_LC = ['ianuarie','februarie','martie','aprilie','mai','iunie','iulie','august','septembrie','octombrie','noiembrie','decembrie'];
+const DEFAULT_ACTIONS = [
+  {name:'De trimis materiale', color:'#f3ddc9'},
+  {name:'De răspuns la mesaj', color:'#ddd6f0'},
+  {name:'De sunat', color:'#f2d3d3'},
+  {name:'De programat', color:'#d4e6d2'}
+];
+
+/* ============ SETARI LICENTA — modifica aici pentru fiecare copie trimisa ============
+   id          = identificatorul acestei copii (unic per terapeut, ex. 'test-maria-01')
+   url         = adresa fisierului JSON cu licentele (GitHub Gist raw). Gol = fara verificare online.
+   expiraLocal = data la care copia se blocheaza singura, chiar si offline (AAAA-LL-ZZ). Gol = niciodata.
+   contact     = emailul afisat pe ecranul de blocare. */
+const LICENTA = {
+  id: 'test-01',
+  url: 'https://raw.githubusercontent.com/pershi99/Zna-app/main/zena-licente.json',
+  expiraLocal: '2026-08-02',
+  contact: 'persiofficial@gmail.com'
+};
+
+/* ============ ACTUALIZARI ============
+   APP_VERSION = versiunea acestei copii. Cand publici o versiune noua, creste numarul
+   AICI (in noul Zena.html) SI in fisierul zena-versiune.json de pe GitHub.
+   UPDATE.url  = adresa fisierului JSON cu ultima versiune (GitHub raw). */
+const APP_VERSION = '3.2.0';
+const UPDATE = {
+  url: 'https://raw.githubusercontent.com/pershi99/Zna-app/main/zena-versiune.json'
+};
+
+/* ============ utilitare ============ */
+function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function fmtDate(d){ return d ? d.toLocaleDateString('ro-RO',{day:'numeric',month:'long',year:'numeric'}) : '—'; }
+function fmtShort(d){ return d ? d.toLocaleDateString('ro-RO',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—'; }
+function dstr(d){ return d ? String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear() : ''; }
+function isoDate(d){ return d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : ''; }
+function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
+function toDate(v){
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return startOfDay(v);
+  if (typeof v === 'number') { const d = XLSX.SSF.parse_date_code(v); return d ? new Date(d.y, d.m-1, d.d) : null; }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const d = new Date(s); return isNaN(d) ? null : startOfDay(d);
+}
+function daysBetween(a,b){ return Math.round((b-a)/864e5); }
+function esc(s){ return String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function initials(name){ return String(name||'?').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+const AV_COLORS = ['#a8c3a0','#b3a8d1','#d9b08c','#c99a9a','#9ab8c9','#c9b89a'];
+function avColor(name){ let h=0; for(const c of String(name)) h=(h*31+c.charCodeAt(0))>>>0; return AV_COLORS[h%AV_COLORS.length]; }
+function money(n){ return (n||0).toLocaleString('ro-RO') + ' lei'; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); }
+function actColor(name){ const a = ACTIONS.find(x=>norm(x.name)===norm(name)); return a ? a.color : '#e8e8e4'; }
+
+/* ============ citirea folderului ============ */
+const HAS_FSA = 'showDirectoryPicker' in window;
+document.getElementById('pickBtn').onclick = pickFolder;
+async function pickFolder(){
+  if (!HAS_FSA) { document.getElementById('fallbackWrap').style.display='block'; document.getElementById('welcomeHint').textContent='Browserul tău nu permite salvarea din aplicație — alege folderul mai jos (mod doar-citire).'; return; }
+  try {
+    dirHandle = await window.showDirectoryPicker({ id:'zena', mode:'readwrite' });
+    await saveHandle(dirHandle);
+    canWrite = true;
+    await loadFromHandle();
+  } catch(e) { if (e.name !== 'AbortError') alert('Nu am putut deschide folderul: ' + e.message); }
+}
+document.getElementById('dirInput').addEventListener('change', async (ev) => {
+  canWrite = false;
+  await loadFromFileList([...ev.target.files]);
+});
+if (!HAS_FSA) document.getElementById('fallbackWrap').style.display = 'block';
+
+/* memorare handle in IndexedDB */
+function idb(){ return new Promise((res,rej)=>{ const r = indexedDB.open('zena',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function saveHandle(h){ try{ const db = await idb(); const tx = db.transaction('kv','readwrite'); tx.objectStore('kv').put(h,'dir'); }catch(e){} }
+async function getHandle(){ try{ const db = await idb(); return await new Promise(res=>{ const rq = db.transaction('kv').objectStore('kv').get('dir'); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+/* ============ verificarea licentei ============ */
+function lockApp(exp){
+  document.body.innerHTML = `<div class="welcome"><div class="welcome-card">
+    <div class="big"><img class="zena-logo-img" src="zena-logo.png" alt="zena"></div>
+    <div class="muted" style="font-size:14px">spațiul tău calm de lucru</div>
+    <p><b>Perioada de utilizare s-a încheiat${exp?' pe '+fmtShort(exp):''}.</b><br><br>
+    Datele tale sunt în siguranță — rămân în folderul Zena (Excelul și notițele) și le poți deschide oricând.
+    Scrie-ne ca să reactivăm aplicația.</p>
+    <a class="btn" href="mailto:${LICENTA.contact}?subject=Zena%20-%20reactivare">✉️ Contactează-ne</a>
+  </div></div>`;
+}
+async function checkLicense(){
+  const KEY = 'zena_lic_' + LICENTA.id;
+  let saved = null; try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){}
+  if (LICENTA.url) {
+    try {
+      const r = await fetch(LICENTA.url + (LICENTA.url.includes('?')?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
+      const all = await r.json();
+      const rec = all[LICENTA.id];
+      saved = { status: rec ? (rec.status || 'activ') : 'blocat', expira: (rec && rec.expira) || '' };
+      localStorage.setItem(KEY, JSON.stringify(saved));
+    } catch(e){ /* offline — folosim ultima stare cunoscuta */ }
+  }
+  const exp = toDate((saved && saved.expira) || LICENTA.expiraLocal);
+  if ((saved && saved.status === 'blocat') || (exp && TODAY > exp)) { lockApp(exp); return false; }
+  return true;
+}
+
+(async ()=>{
+  if (!await checkLicense()) return;
+  if (!HAS_FSA) return;
+  const h = await getHandle();
+  if (!h) return;
+  if (await h.queryPermission({mode:'readwrite'}) === 'granted') { dirHandle = h; canWrite = true; loadFromHandle(); }
+  else {
+    const btn = document.getElementById('pickBtn');
+    btn.textContent = 'Continuă cu folderul „' + h.name + '”';
+    btn.onclick = async () => {
+      try { if (await h.requestPermission({mode:'readwrite'}) === 'granted') { dirHandle = h; canWrite = true; await loadFromHandle(); return; } } catch(e){}
+      await pickFolder();
+    };
+  }
+})();
+
+/* ============ actualizari (update in-app) ============ */
+let updateInfo = null;
+function cmpVer(a,b){
+  const pa=String(a).split('.').map(n=>parseInt(n)||0), pb=String(b).split('.').map(n=>parseInt(n)||0);
+  for (let i=0;i<Math.max(pa.length,pb.length);i++){ const d=(pa[i]||0)-(pb[i]||0); if (d) return d>0?1:-1; }
+  return 0;
+}
+function selfFileName(){
+  try { const n = decodeURIComponent((location.pathname.split('/').pop()||'')); if (/\.html?$/i.test(n)) return n; } catch(e){}
+  return 'Zena.html';
+}
+async function checkUpdate(manual){
+  if (!UPDATE.url) return;
+  try {
+    const r = await fetch(UPDATE.url + (UPDATE.url.includes('?')?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    if (j && j.versiune && cmpVer(j.versiune, APP_VERSION) > 0) {
+      updateInfo = j; renderUpdateBadge();
+      if (manual) toast('Versiune nouă disponibilă: v' + j.versiune);
+    } else {
+      updateInfo = null; renderUpdateBadge();
+      if (manual) toast('Ești la zi — v' + APP_VERSION + ' ✓');
+    }
+  } catch(e){ if (manual) toast('Nu am putut verifica actualizările (verifică internetul).'); }
+}
+function renderUpdateBadge(){
+  const el = document.getElementById('updInfo'); if (!el) return;
+  el.innerHTML = updateInfo
+    ? `<button class="upd-btn" onclick="doUpdate()">⬆️ Actualizează la v${esc(updateInfo.versiune)}</button>
+       ${updateInfo.note?`<div class="upd-note">${esc(updateInfo.note)}</div>`:''}`
+    : '';
+}
+async function doUpdate(){
+  if (!updateInfo) return;
+  if (!dirHandle || !canWrite) { alert('Pentru actualizare automată, deschide Zena în Chrome sau Edge și alege folderul cu butonul principal (mod scriere).'); return; }
+  if (!confirm('Actualizez Zena la versiunea ' + updateInfo.versiune + '?\n\nDatele tale (Excelul și notițele) NU sunt afectate. Versiunea veche se salvează ca rezervă.')) return;
+  try {
+    toast('Se descarcă actualizarea…');
+    const htmlUrl = updateInfo.url;
+    if (!htmlUrl) throw new Error('lipsește adresa versiunii');
+    const res = await fetch(htmlUrl + (htmlUrl.includes('?')?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const html = await res.text();
+    if (!/<html/i.test(html)) throw new Error('fișierul descărcat nu pare valid');
+    const selfName = selfFileName();
+    try {
+      const cur = await dirHandle.getFileHandle(selfName);
+      const buf = await (await cur.getFile()).arrayBuffer();
+      const bh = await dirHandle.getFileHandle(selfName.replace(/\.html?$/i,'') + '.backup.html', {create:true});
+      const bw = await bh.createWritable(); await bw.write(buf); await bw.close();
+    } catch(e){}
+    const fh = await dirHandle.getFileHandle(selfName, {create:true});
+    const w = await fh.createWritable(); await w.write(html); await w.close();
+    if (Array.isArray(updateInfo.fisiere)) {
+      for (const f of updateInfo.fisiere) {
+        if (!f || !f.nume || !f.url) continue;
+        try {
+          const fr = await fetch(f.url + (f.url.includes('?')?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
+          if (!fr.ok) continue;
+          const ab = await fr.arrayBuffer();
+          const fhh = await dirHandle.getFileHandle(f.nume, {create:true});
+          const ww = await fhh.createWritable(); await ww.write(ab); await ww.close();
+        } catch(e){}
+      }
+    }
+    alert('Actualizare reușită la v' + updateInfo.versiune + ' 🌿\n\nZena se va redeschide cu noua versiune.');
+    location.reload();
+  } catch(e){
+    alert('Nu am putut finaliza actualizarea: ' + e.message + '\n\nÎncearcă din nou sau scrie-ne pentru ajutor.');
+  }
+}
+
+async function loadFromHandle(){
+  const notes = {}, files = {};
+  let wbData = null, fileName = '';
+  for await (const [name, h] of dirHandle.entries()) {
+    if (h.kind === 'file' && /\.xlsx$/i.test(name) && !/backup/i.test(name) && !name.startsWith('~$')) {
+      const f = await h.getFile(); wbData = await f.arrayBuffer(); fileName = name;
+    }
+  }
+  let pdir = null;
+  for (const dn of ['Clienti','Pacienti']) {
+    try { pdir = await dirHandle.getDirectoryHandle(dn); clientDirName = dn; break; } catch(e){}
+  }
+  if (pdir) {
+    for await (const [pname, ph] of pdir.entries()) {
+      if (ph.kind !== 'directory') continue;
+      const key = norm(pname); files[key] = [];
+      for await (const [fname, fh] of ph.entries()) {
+        if (fh.kind === 'file') {
+          if (/^notite\.(md|txt)$/i.test(fname)) notes[key] = await (await fh.getFile()).text();
+          else files[key].push(fname);
+        } else {
+          for await (const [sub, sh] of fh.entries()) if (sh.kind==='file') files[key].push(fname + ' / ' + sub);
+        }
+      }
+    }
+  }
+  finishLoad(wbData, fileName, notes, files);
+}
+
+async function loadFromFileList(list){
+  const notes = {}, files = {};
+  let wbData = null, fileName = '';
+  for (const f of list) {
+    const rel = (f.webkitRelativePath || f.name).split('/').slice(1);
+    if (rel.length === 1 && /\.xlsx$/i.test(rel[0]) && !/backup/i.test(rel[0]) && !rel[0].startsWith('~$')) { wbData = await f.arrayBuffer(); fileName = rel[0]; }
+    if ((rel[0] === 'Clienti' || rel[0] === 'Pacienti') && rel.length >= 3) {
+      const key = norm(rel[1]); files[key] = files[key] || [];
+      if (rel.length === 3 && /^notite\.(md|txt)$/i.test(rel[2])) notes[key] = await f.text();
+      else files[key].push(rel.slice(2).join(' / '));
+    }
+  }
+  finishLoad(wbData, fileName, notes, files);
+}
+
+function finishLoad(wbData, fileName, notes, files){
+  if (!wbData) { alert('Nu am găsit niciun fișier Excel (.xlsx) în folderul ales. Verifică dacă ai ales folderul Zena.'); return; }
+  const wb = XLSX.read(wbData, { cellDates:true });
+  const sh = n => { const key = wb.SheetNames.find(s=>norm(s)===norm(n)); return key ? XLSX.utils.sheet_to_json(wb.Sheets[key], {defval:''}) : []; };
+  const rawC = sh('Clienti').length ? sh('Clienti') : sh('Pacienti');
+  RAW.patients = rawC.filter(r=>r.Nume).map(r => ({
+    id:r.ID, name:String(r.Nume).trim(), phone:r.Telefon||'', email:r.Email||'', status:r.Status||'Activ',
+    diag:r.Diagnostic||'', fee:parseFloat(r.Tarif)||0, start:toDate(r.DataInceput),
+    action:String(r.Actiune||'').trim(), obs:r.Observatii||''
+  }));
+  RAW.sessions = sh('Sedinte').map(r => ({
+    pid:(r.IDClient!==''&&r.IDClient!=null)?r.IDClient:r.IDPacient, date:toDate(r.Data), time:String(r.Ora||'').slice(0,5), dur:r.Durata||'',
+    paidRaw:norm(r.Platita)==='da'?'DA':norm(r.Platita)==='nu'?'NU':'', sum:parseFloat(r.Suma)||0, obs:r.Observatii||''
+  })).filter(s=>s.date);
+  RAW.themes = sh('Teme').map(r => ({
+    pid:(r.IDClient!==''&&r.IDClient!=null)?r.IDClient:r.IDPacient, date:toDate(r.Data),
+    text:String(r.Tema||'').trim(), status:norm(r.Status)==='finalizata'?'finalizata':'activa'
+  })).filter(t=>t.text);
+  RAW.quizzes = sh('Chestionare').map(r => ({
+    pid:(r.IDClient!==''&&r.IDClient!=null)?r.IDClient:r.IDPacient, date:toDate(r.Data),
+    name:String(r.Chestionar||'').trim(), score:parseFloat(r.Scor), obs:r.Observatii||''
+  })).filter(q=>q.date && q.name && !isNaN(q.score));
+  const rawA = sh('Actiuni');
+  ACTIONS = rawA.filter(r=>r.Nume).map(r=>({ name:String(r.Nume).trim(), color:String(r.Culoare||'#e8e8e4').trim() }));
+  if (!ACTIONS.length) ACTIONS = DEFAULT_ACTIONS.slice();
+  DB.notes = notes; DB.files = files; DB.fileName = fileName;
+  rebuild();
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('app').classList.add('on');
+  render();
+  checkUpdate(false);
+}
+
+/* recalculeaza DB.patients din RAW */
+function rebuild(){
+  RAW.sessions.forEach((s,i)=>s._i=i);
+  RAW.themes.forEach((t,i)=>t._i=i);
+  RAW.quizzes.forEach((q,i)=>q._i=i);
+  DB.patients = RAW.patients.map(r => {
+    const my = RAW.sessions.filter(s=>String(s.pid)===String(r.id)).sort((a,b)=>a.date-b.date || String(a.time).localeCompare(b.time));
+    const past = my.filter(s=>s.date <= TODAY), future = my.filter(s=>s.date > TODAY);
+    const todayS = my.filter(s=>+s.date === +TODAY);
+    const myThemes = RAW.themes.filter(t=>String(t.pid)===String(r.id)).sort((a,b)=>(a.date||0)-(b.date||0));
+    const myQuiz = RAW.quizzes.filter(q=>String(q.pid)===String(r.id)).sort((a,b)=>a.date-b.date);
+    return { ...r, sessions:my, past, future, todayS,
+      next:(todayS[0] || future[0]) || null,
+      last:past.filter(s=>+s.date < +TODAY).slice(-1)[0] || null,
+      count:past.length,
+      unpaidList:past.filter(s=>s.paidRaw==='NU'),
+      themes:myThemes, activeTheme:myThemes.filter(t=>t.status==='activa').slice(-1)[0] || null,
+      quizzes:myQuiz,
+      key:norm(r.name) };
+  });
+  document.getElementById('srcInfo').textContent = '📄 ' + DB.fileName + (canWrite?'':' · doar citire');
+}
+
+/* ============ scriere ============ */
+async function backupOnce(){
+  if (backedUp || !dirHandle || !DB.fileName) return;
+  try {
+    const fh = await dirHandle.getFileHandle(DB.fileName);
+    const buf = await (await fh.getFile()).arrayBuffer();
+    const bh = await dirHandle.getFileHandle(DB.fileName.replace(/\.xlsx$/i,'') + '.backup.xlsx', {create:true});
+    const w = await bh.createWritable(); await w.write(buf); await w.close();
+    backedUp = true;
+  } catch(e){}
+}
+
+async function saveExcel(){
+  if (!canWrite) { toast('Mod doar-citire — modificarea nu a fost salvată.'); return false; }
+  try {
+    await backupOnce();
+    const wb = XLSX.utils.book_new();
+    const wsP = XLSX.utils.json_to_sheet(RAW.patients.map(p=>({
+      ID:p.id, Nume:p.name, Telefon:p.phone, Email:p.email, Status:p.status,
+      Diagnostic:p.diag, Tarif:p.fee, DataInceput:dstr(p.start), Actiune:p.action||'', Observatii:p.obs })));
+    wsP['!cols'] = [{wch:5},{wch:22},{wch:15},{wch:24},{wch:10},{wch:34},{wch:8},{wch:13},{wch:20},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, wsP, 'Clienti');
+    const sorted = RAW.sessions.slice().sort((a,b)=>String(a.pid)-String(b.pid) || a.date-b.date);
+    const wsS = XLSX.utils.json_to_sheet(sorted.map(s=>({
+      IDClient:s.pid, Data:dstr(s.date), Ora:s.time, Durata:s.dur, Platita:s.paidRaw, Suma:s.sum||'', Observatii:s.obs })));
+    wsS['!cols'] = [{wch:10},{wch:13},{wch:7},{wch:8},{wch:8},{wch:8},{wch:32}];
+    XLSX.utils.book_append_sheet(wb, wsS, 'Sedinte');
+    const wsA = XLSX.utils.json_to_sheet(ACTIONS.map(a=>({ Nume:a.name, Culoare:a.color })));
+    wsA['!cols'] = [{wch:24},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, wsA, 'Actiuni');
+    const sortedT = RAW.themes.slice().sort((a,b)=>String(a.pid).localeCompare(String(b.pid)) || (a.date||0)-(b.date||0));
+    const wsT = XLSX.utils.json_to_sheet(sortedT.map(t=>({ IDClient:t.pid, Data:dstr(t.date), Tema:t.text, Status:t.status })),
+      { header:['IDClient','Data','Tema','Status'] });
+    wsT['!cols'] = [{wch:10},{wch:13},{wch:40},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, wsT, 'Teme');
+    const sortedQ = RAW.quizzes.slice().sort((a,b)=>String(a.pid).localeCompare(String(b.pid)) || a.date-b.date);
+    const wsQ = XLSX.utils.json_to_sheet(sortedQ.map(q=>({ IDClient:q.pid, Data:dstr(q.date), Chestionar:q.name, Scor:q.score, Observatii:q.obs })),
+      { header:['IDClient','Data','Chestionar','Scor','Observatii'] });
+    wsQ['!cols'] = [{wch:10},{wch:13},{wch:18},{wch:8},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, wsQ, 'Chestionare');
+    const data = XLSX.write(wb, {type:'array', bookType:'xlsx'});
+    const fh = await dirHandle.getFileHandle(DB.fileName, {create:true});
+    const w = await fh.createWritable(); await w.write(data); await w.close();
+    return true;
+  } catch(e) {
+    alert('Nu am putut salva Excelul. Dacă fișierul este deschis în Excel, închide-l și încearcă din nou.\n\n(' + e.message + ')');
+    return false;
+  }
+}
+
+async function getPatientDir(name, create){
+  const pdir = await dirHandle.getDirectoryHandle(clientDirName, {create:true});
+  for await (const [dname, h] of pdir.entries())
+    if (h.kind==='directory' && norm(dname)===norm(name)) return h;
+  return create ? await pdir.getDirectoryHandle(name, {create:true}) : null;
+}
+
+async function saveNotesFile(p, text){
+  if (!canWrite) { toast('Mod doar-citire — notițele nu au fost salvate.'); return false; }
+  try {
+    const folder = await getPatientDir(p.name, true);
+    const fh = await folder.getFileHandle('notite.md', {create:true});
+    const w = await fh.createWritable(); await w.write(text); await w.close();
+    DB.notes[p.key] = text;
+    return true;
+  } catch(e) { alert('Nu am putut salva notițele: ' + e.message); return false; }
+}
+
+async function afterChange(msg){
+  rebuild();
+  const ok = await saveExcel();
+  render();
+  if (ok) toast(msg);
+}
+
+/* ============ modale ============ */
+function openModal(html){ document.getElementById('modalHost').innerHTML =
+  `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
+function closeModal(){ document.getElementById('modalHost').innerHTML=''; }
+function fval(id){ return document.getElementById(id).value.trim(); }
+
+/* ---- client nou / editare ---- */
+function patientForm(p){
+  const isNew = !p;
+  p = p || {name:'',phone:'',email:'',status:'Activ',diag:'',fee:'',start:TODAY,obs:''};
+  openModal(`<h3>${isNew?'Client nou':'Editează clientul'}</h3>
+  <div class="f-row"><label>Nume complet *</label><input id="f_nume" value="${esc(p.name)}"></div>
+  <div class="f-2">
+    <div class="f-row"><label>Telefon</label><input id="f_tel" value="${esc(p.phone)}"></div>
+    <div class="f-row"><label>Email</label><input id="f_email" value="${esc(p.email)}"></div>
+  </div>
+  <div class="f-row"><label>Diagnostic scurt</label><input id="f_diag" value="${esc(p.diag)}"></div>
+  <div class="f-2">
+    <div class="f-row"><label>Status</label><select id="f_status">
+      ${['Activ','Provizoriu','Pauză','Încheiat'].map(s=>`<option ${norm(s)===norm(p.status)?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="f-row"><label>Tarif (lei/ședință)</label><input id="f_tarif" type="number" value="${p.fee||''}"></div>
+  </div>
+  <div class="f-row"><label>În terapie din</label><input id="f_start" type="date" value="${isoDate(p.start)}"></div>
+  <div class="f-row"><label>Observații</label><input id="f_obs" value="${esc(p.obs)}"></div>
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="savePatient(${isNew?'null':`'${p.id}'`})">${isNew?'Adaugă clientul':'Salvează'}</button>
+  </div>`);
+  setTimeout(()=>document.getElementById('f_nume').focus(), 50);
+}
+async function savePatient(id){
+  const name = fval('f_nume');
+  if (!name) { alert('Numele este obligatoriu.'); return; }
+  const vals = { name, phone:fval('f_tel'), email:fval('f_email'), diag:fval('f_diag'),
+    status:fval('f_status'), fee:parseFloat(fval('f_tarif'))||0, start:toDate(fval('f_start')), obs:fval('f_obs') };
+  if (id === null) {
+    const newId = RAW.patients.reduce((m,p)=>Math.max(m, parseInt(p.id)||0), 0) + 1;
+    RAW.patients.push({ id:newId, action:'', ...vals });
+    if (canWrite) {
+      try {
+        const folder = await getPatientDir(name, true);
+        await folder.getDirectoryHandle('Fise si materiale', {create:true});
+        try { await folder.getFileHandle('notite.md'); }
+        catch(e){ const fh = await folder.getFileHandle('notite.md',{create:true});
+          const w = await fh.createWritable(); await w.write('# Notițe — '+name+'\n\n## Plan terapeutic\n- \n'); await w.close();
+          DB.notes[norm(name)] = '# Notițe — '+name+'\n\n## Plan terapeutic\n- \n'; }
+        DB.files[norm(name)] = DB.files[norm(name)] || [];
+      } catch(e){}
+    }
+    closeModal(); currentPatient = String(newId); view='patient';
+    await afterChange('Client adăugat 🌿');
+  } else {
+    const p = RAW.patients.find(x=>String(x.id)===String(id));
+    Object.assign(p, vals);
+    closeModal();
+    await afterChange('Client actualizat');
+  }
+}
+
+/* ---- actiuni (etichete colorate) ---- */
+function actionPill(p, stop){
+  const st = stop ? 'event.stopPropagation();' : '';
+  if (!canWrite && !p.action) return '';
+  if (!p.action) return `<button class="act-pill none" onclick="${st}actionPicker('${p.id}')" title="setează o acțiune">＋ acțiune</button>`;
+  return `<button class="act-pill" style="background:${esc(actColor(p.action))}" onclick="${st}${canWrite?`actionPicker('${p.id}')`:''}" title="${canWrite?'schimbă acțiunea':''}">${esc(p.action)}</button>`;
+}
+function actionPicker(pid){
+  const p = RAW.patients.find(x=>String(x.id)===String(pid)); if (!p) return;
+  openModal(`<h3>Acțiune pentru ${esc(p.name)}</h3>
+  ${ACTIONS.map(a=>`<button class="act-opt" style="background:${esc(a.color)}" onclick="setAction('${pid}','${esc(a.name).replace(/'/g,"\\'")}')">${esc(a.name)}</button>`).join('')}
+  <button class="act-opt none" onclick="setAction('${pid}','')">✕ Fără acțiune</button>
+  <div class="m-actions" style="justify-content:space-between">
+    <button class="btn ghost small" onclick="actionsEditor()">⚙️ Editează lista</button>
+    <button class="btn ghost small" onclick="closeModal()">Închide</button>
+  </div>`);
+}
+async function setAction(pid, name){
+  const p = RAW.patients.find(x=>String(x.id)===String(pid)); if (!p) return;
+  p.action = name;
+  closeModal();
+  await afterChange(name ? 'Acțiune setată: ' + name : 'Acțiune ștearsă');
+}
+let tmpActions = [];
+function actionsEditor(){
+  tmpActions = ACTIONS.map(a=>({...a}));
+  renderActionsEditor();
+}
+function renderActionsEditor(){
+  openModal(`<h3>Lista de acțiuni</h3>
+  <p class="muted" style="font-size:13px;margin-bottom:16px">Definește acțiunile tale și culorile lor — apar ca etichete în dreptul clienților.</p>
+  <div id="aeList">
+  ${tmpActions.map((a,i)=>`<div class="ae-row">
+    <input type="color" value="${esc(a.color)}" onchange="tmpActions[${i}].color=this.value">
+    <input type="text" value="${esc(a.name)}" oninput="tmpActions[${i}].name=this.value" placeholder="numele acțiunii">
+    <button class="iconbtn" title="șterge" onclick="aeDel(${i})">🗑</button>
+  </div>`).join('')}
+  </div>
+  <button class="btn subtle small" onclick="aeAdd()">＋ Adaugă acțiune</button>
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="aeSave()">Salvează lista</button>
+  </div>`);
+}
+function aeAdd(){ tmpActions.push({name:'', color:'#e6e2f0'}); renderActionsEditor(); }
+function aeDel(i){ tmpActions.splice(i,1); renderActionsEditor(); }
+async function aeSave(){
+  const cleaned = tmpActions.filter(a=>a.name.trim()).map(a=>({name:a.name.trim(), color:a.color}));
+  if (!cleaned.length) { alert('Lista nu poate fi goală — păstrează măcar o acțiune.'); return; }
+  ACTIONS = cleaned;
+  closeModal();
+  await afterChange('Lista de acțiuni salvată 🎨');
+}
+
+/* ---- sedinta noua ---- */
+function sessionForm(pid, dateIso){
+  const opts = RAW.patients.filter(p=>norm(p.status)!=='incheiat').map(p=>
+    `<option value="${p.id}" ${String(p.id)===String(pid)?'selected':''}>${esc(p.name)}</option>`).join('');
+  openModal(`<h3>Ședință nouă</h3>
+  <div class="f-row"><label>Client *</label><select id="s_pid">${opts}</select></div>
+  <div class="f-2">
+    <div class="f-row"><label>Data *</label><input id="s_data" type="date" value="${dateIso||isoDate(TODAY)}"></div>
+    <div class="f-row"><label>Ora</label><input id="s_ora" type="time" value="18:00"></div>
+  </div>
+  <div class="f-2">
+    <div class="f-row"><label>Durata (min)</label><input id="s_dur" type="number" value="50"></div>
+    <div class="f-row"><label>Suma (lei)</label><input id="s_suma" type="number" placeholder="tariful clientului"></div>
+  </div>
+  <div class="f-row"><label>Observații</label><input id="s_obs"></div>
+  <div class="f-row"><label><input type="checkbox" id="s_rec" style="width:auto;margin-right:6px">repetă săptămânal (încă 3 săptămâni)</label></div>
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="saveSession()">Adaugă ședința</button>
+  </div>`);
+}
+async function saveSession(){
+  const pid = fval('s_pid'), date = toDate(fval('s_data'));
+  if (!pid || !date) { alert('Alege clientul și data.'); return; }
+  const p = RAW.patients.find(x=>String(x.id)===String(pid));
+  const base = { pid: isNaN(+pid)?pid:+pid, time:fval('s_ora'), dur:parseFloat(fval('s_dur'))||'',
+    paidRaw:'', sum:parseFloat(fval('s_suma')) || (p?p.fee:0), obs:fval('s_obs') };
+  RAW.sessions.push({ ...base, date });
+  if (document.getElementById('s_rec').checked)
+    for (let w=1; w<=3; w++){ const d = new Date(date); d.setDate(d.getDate()+7*w); RAW.sessions.push({ ...base, date:startOfDay(d) }); }
+  closeModal();
+  await afterChange('Ședință adăugată 📅');
+}
+
+/* ---- actiuni pe sedinte ---- */
+async function togglePaid(i){
+  const s = RAW.sessions[i]; if (!s) return;
+  s.paidRaw = s.paidRaw==='DA' ? 'NU' : 'DA';
+  await afterChange(s.paidRaw==='DA' ? 'Marcată ca plătită ✓' : 'Marcată ca neplătită');
+}
+async function delSession(i){
+  const s = RAW.sessions[i]; if (!s) return;
+  const p = RAW.patients.find(x=>String(x.id)===String(s.pid));
+  if (!confirm('Ștergi ședința din '+dstr(s.date)+(p?' cu '+p.name:'')+'?')) return;
+  RAW.sessions.splice(i,1);
+  await afterChange('Ședință ștearsă');
+}
+
+/* ---- teme (temă activă) ---- */
+function themeForm(pid, idx){
+  const t = (idx!=null) ? RAW.themes[idx] : null;
+  const isNew = !t;
+  openModal(`<h3>${isNew?'Temă nouă':'Editează tema'}</h3>
+  <div class="f-row"><label>Tema / exercițiul pentru acasă *</label>
+    <textarea id="t_text" rows="3" placeholder="ex. Jurnal de gânduri automate, 3 intrări pe săptămână">${t?esc(t.text):''}</textarea></div>
+  <div class="f-2">
+    <div class="f-row"><label>Data</label><input id="t_data" type="date" value="${isoDate(t?t.date:TODAY)}"></div>
+    <div class="f-row"><label>Status</label><select id="t_status">
+      <option value="activa" ${!t||t.status==='activa'?'selected':''}>Activă</option>
+      <option value="finalizata" ${t&&t.status==='finalizata'?'selected':''}>Finalizată</option></select></div>
+  </div>
+  ${isNew?`<div class="hint" style="margin-top:0">Când adaugi o temă activă, tema activă anterioară se marchează automat ca finalizată.</div>`:''}
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="saveTheme('${pid}',${idx!=null?idx:'null'})">${isNew?'Adaugă tema':'Salvează'}</button>
+  </div>`);
+  setTimeout(()=>document.getElementById('t_text').focus(), 50);
+}
+async function saveTheme(pid, idx){
+  const text = document.getElementById('t_text').value.trim();
+  if (!text) { alert('Scrie tema.'); return; }
+  const status = document.getElementById('t_status').value==='finalizata' ? 'finalizata' : 'activa';
+  const date = toDate(fval('t_data')) || TODAY;
+  const npid = isNaN(+pid)?pid:+pid;
+  if (idx===null) {
+    if (status==='activa') RAW.themes.forEach(t=>{ if (String(t.pid)===String(npid) && t.status==='activa') t.status='finalizata'; });
+    RAW.themes.push({ pid:npid, date, text, status });
+  } else {
+    const t = RAW.themes[idx]; if (!t) return;
+    if (status==='activa' && t.status!=='activa') RAW.themes.forEach(o=>{ if (o!==t && String(o.pid)===String(t.pid) && o.status==='activa') o.status='finalizata'; });
+    Object.assign(t, { date, text, status });
+  }
+  closeModal();
+  await afterChange(idx===null?'Temă adăugată 🎯':'Temă actualizată');
+}
+async function finalizeTheme(idx){
+  const t = RAW.themes[idx]; if (!t) return;
+  t.status = 'finalizata';
+  await afterChange('Temă finalizată ✓');
+}
+async function reactivateTheme(idx){
+  const t = RAW.themes[idx]; if (!t) return;
+  RAW.themes.forEach(o=>{ if (o!==t && String(o.pid)===String(t.pid) && o.status==='activa') o.status='finalizata'; });
+  t.status = 'activa';
+  await afterChange('Temă reactivată');
+}
+async function delTheme(idx){
+  const t = RAW.themes[idx]; if (!t) return;
+  if (!confirm('Ștergi tema „'+t.text.slice(0,40)+'”?')) return;
+  RAW.themes.splice(idx,1);
+  await afterChange('Temă ștearsă');
+}
+
+/* ---- chestionare (evoluție) ---- */
+const QUIZ_SUGGEST = ['GAD-7','PHQ-9','Beck (BDI)','DASS-21','Scala de anxietate','Scala de dispoziție'];
+function quizForm(pid, idx){
+  const q = (idx!=null) ? RAW.quizzes[idx] : null;
+  const isNew = !q;
+  const used = [...new Set(RAW.quizzes.map(x=>x.name))];
+  const lastName = isNew ? (RAW.quizzes.filter(x=>String(x.pid)===String(pid)).slice(-1)[0]?.name || '') : q.name;
+  const dl = [...new Set([...used, ...QUIZ_SUGGEST])];
+  openModal(`<h3>${isNew?'Scor chestionar':'Editează scorul'}</h3>
+  <div class="f-row"><label>Chestionar / instrument *</label>
+    <input id="q_name" list="q_names" value="${esc(lastName)}" placeholder="ex. GAD-7">
+    <datalist id="q_names">${dl.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+  <div class="f-2">
+    <div class="f-row"><label>Scor *</label><input id="q_score" type="number" step="any" value="${q&&!isNaN(q.score)?q.score:''}"></div>
+    <div class="f-row"><label>Data</label><input id="q_data" type="date" value="${isoDate(q?q.date:TODAY)}"></div>
+  </div>
+  <div class="f-row"><label>Observații</label><input id="q_obs" value="${q?esc(q.obs):''}"></div>
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="saveQuiz('${pid}',${idx!=null?idx:'null'})">${isNew?'Adaugă scorul':'Salvează'}</button>
+  </div>`);
+  setTimeout(()=>{ const el=document.getElementById(isNew?'q_score':'q_name'); if(el)el.focus(); }, 50);
+}
+async function saveQuiz(pid, idx){
+  const name = fval('q_name');
+  const score = parseFloat(fval('q_score'));
+  if (!name) { alert('Alege chestionarul.'); return; }
+  if (isNaN(score)) { alert('Scrie un scor numeric.'); return; }
+  const date = toDate(fval('q_data')) || TODAY;
+  const obs = fval('q_obs');
+  if (idx===null) RAW.quizzes.push({ pid:isNaN(+pid)?pid:+pid, date, name, score, obs });
+  else { const q = RAW.quizzes[idx]; if (!q) return; Object.assign(q, { date, name, score, obs }); }
+  closeModal();
+  await afterChange(idx===null?'Scor adăugat 📈':'Scor actualizat');
+}
+async function delQuiz(idx){
+  const q = RAW.quizzes[idx]; if (!q) return;
+  if (!confirm('Ștergi scorul '+q.name+' din '+dstr(q.date)+'?')) return;
+  RAW.quizzes.splice(idx,1);
+  await afterChange('Scor șters');
+}
+/* mini-grafic SVG de evoluție pentru un instrument */
+function quizChart(points){
+  const W=300, H=110, pl=8, pr=8, pt=18, pb=18;
+  if (!points.length) return '';
+  if (points.length===1) return `<div class="q-single">Un singur scor: <b>${points[0].score}</b> <span class="muted">(${fmtShort(points[0].date)})</span> — adaugă mai multe ca să vezi evoluția.</div>`;
+  const scores = points.map(p=>p.score);
+  let mn=Math.min(...scores), mx=Math.max(...scores);
+  if (mn===mx){ mn-=1; mx+=1; }
+  const xs = points.map((p,i)=> pl + i*(W-pl-pr)/(points.length-1));
+  const yOf = s => (H-pb) - (s-mn)/(mx-mn)*(H-pt-pb);
+  const line = points.map((p,i)=>`${i?'L':'M'}${xs[i].toFixed(1)},${yOf(p.score).toFixed(1)}`).join(' ');
+  const area = `M${xs[0].toFixed(1)},${(H-pb)} ` + points.map((p,i)=>`L${xs[i].toFixed(1)},${yOf(p.score).toFixed(1)}`).join(' ') + ` L${xs[xs.length-1].toFixed(1)},${(H-pb)} Z`;
+  const dots = points.map((p,i)=>`<circle cx="${xs[i].toFixed(1)}" cy="${yOf(p.score).toFixed(1)}" r="3.2" fill="#7fa383"><title>${esc(fmtShort(p.date))}: ${p.score}</title></circle>`+
+    `<text x="${xs[i].toFixed(1)}" y="${(yOf(p.score)-7).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="#8a938d">${p.score}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:110px;display:block">
+    <path d="${area}" fill="#7fa383" opacity="0.10"></path>
+    <path d="${line}" fill="none" stroke="#7fa383" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    ${dots}</svg>`;
+}
+function quizBlock(p){
+  if (!p.quizzes.length) {
+    return `<div class="empty" style="padding:22px 0">Niciun scor încă.${canWrite?'<br><button class="btn small" style="margin-top:12px" onclick="quizForm(\''+p.id+'\')">Adaugă primul scor</button>':''}</div>`;
+  }
+  const groups = {};
+  p.quizzes.forEach(q=>{ (groups[q.name] = groups[q.name] || []).push(q); });
+  return Object.keys(groups).map(name=>{
+    const pts = groups[name].slice().sort((a,b)=>a.date-b.date);
+    const first = pts[0], last = pts[pts.length-1];
+    const delta = pts.length>1 ? `<span class="muted" style="font-size:12px">de la ${first.score} la ${last.score}</span>` : '';
+    return `<div class="q-group">
+      <div class="q-head"><b>${esc(name)}</b> ${delta}</div>
+      ${quizChart(pts)}
+      <div class="q-rows">${pts.slice().reverse().map(q=>`<div class="q-row">
+        <span>${fmtShort(q.date)} · <b>${q.score}</b>${q.obs?` <span class="muted">— ${esc(q.obs)}</span>`:''}</span>
+        ${canWrite?`<span style="white-space:nowrap"><button class="iconbtn" title="editează" onclick="quizForm('${p.id}',${q._i})">✏️</button><button class="iconbtn" title="șterge" onclick="delQuiz(${q._i})">🗑</button></span>`:''}
+      </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function themeBlock(p){
+  const at = p.activeTheme;
+  const past = p.themes.filter(t=>t!==at).slice().reverse();
+  let html = '';
+  if (at) {
+    html += `<div class="theme-active">
+      <div class="theme-txt">${esc(at.text)}</div>
+      <div class="theme-meta"><span class="muted">din ${fmtShort(at.date)}</span>
+        ${canWrite?`<span style="white-space:nowrap">
+          <button class="btn subtle small" onclick="finalizeTheme(${at._i})">✓ Finalizează</button>
+          <button class="iconbtn" title="editează" onclick="themeForm('${p.id}',${at._i})">✏️</button>
+          <button class="iconbtn" title="șterge" onclick="delTheme(${at._i})">🗑</button></span>`:''}
+      </div></div>`;
+  } else {
+    html += `<div class="empty" style="padding:18px 0">Nicio temă activă.${canWrite?'<br><button class="btn small" style="margin-top:12px" onclick="themeForm(\''+p.id+'\')">Adaugă o temă</button>':''}</div>`;
+  }
+  if (past.length) {
+    html += `<div class="theme-hist-title muted">Teme anterioare</div>` + past.map(t=>`<div class="theme-hist">
+      <span class="pill ${t.status==='finalizata'?'p-incheiat':'p-activ'}" style="margin-right:8px">${t.status==='finalizata'?'finalizată':'activă'}</span>
+      <span>${esc(t.text)}</span> <span class="muted" style="font-size:12px">· ${fmtShort(t.date)}</span>
+      ${canWrite?`<span style="float:right;white-space:nowrap"><button class="iconbtn" title="reactivează" onclick="reactivateTheme(${t._i})">↺</button><button class="iconbtn" title="editează" onclick="themeForm('${p.id}',${t._i})">✏️</button><button class="iconbtn" title="șterge" onclick="delTheme(${t._i})">🗑</button></span>`:''}
+    </div>`).join('');
+  }
+  return html;
+}
+
+/* ---- editarea cardului de date client ---- */
+function editInfo(){ editingInfo = true; render(); }
+function cancelInfo(){ editingInfo = false; render(); }
+async function saveInfoUI(pid){
+  const p = RAW.patients.find(x=>String(x.id)===String(pid)); if (!p) return;
+  p.diag = fval('i_diag');
+  p.start = toDate(fval('i_start'));
+  p.fee = parseFloat(fval('i_tarif'))||0;
+  p.phone = fval('i_tel');
+  p.email = fval('i_email');
+  p.obs = document.getElementById('i_obs').value.trim();
+  editingInfo = false;
+  await afterChange('Date salvate ✓');
+}
+
+/* ---- plati: editare & inregistrare ---- */
+function paymentFields(s, p){
+  return `<div class="f-row"><label>Status plată</label><select id="pay_status">
+    <option value="DA" ${s&&s.paidRaw==='DA'?'selected':''}>Plătită</option>
+    <option value="NU" ${s&&s.paidRaw==='NU'?'selected':''}>Neplătită</option>
+    <option value="" ${s&&s.paidRaw===''?'selected':''}>Fără status (programată)</option></select></div>
+  <div class="f-2">
+    <div class="f-row"><label>Suma (lei)</label><input id="pay_suma" type="number" value="${(s&&s.sum) || (p?p.fee:'') || ''}"></div>
+    <div class="f-row"><label>&nbsp;</label><span class="hint" style="margin:0;display:block;padding-top:10px">recomandat: tariful clientului${p?' ('+money(p.fee)+')':''}</span></div>
+  </div>
+  <div class="f-row"><label>Observații</label><input id="pay_obs" value="${s?esc(s.obs):''}"></div>`;
+}
+function paymentForm(i){
+  const s = RAW.sessions[i]; if (!s) return;
+  const p = RAW.patients.find(x=>String(x.id)===String(s.pid));
+  openModal(`<h3>Plată — ${p?esc(p.name):'?'} · ${dstr(s.date)}</h3>
+  ${paymentFields(s, p)}
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="savePayment(${i})">Salvează plata</button>
+  </div>`);
+}
+async function savePayment(i){
+  const s = RAW.sessions[i]; if (!s) return;
+  s.paidRaw = document.getElementById('pay_status').value;
+  s.sum = parseFloat(fval('pay_suma'))||0;
+  s.obs = fval('pay_obs');
+  closeModal();
+  await afterChange('Plată actualizată 💳');
+}
+function paymentAdd(){
+  if (!RAW.patients.length) { alert('Adaugă întâi un client.'); return; }
+  const opts = RAW.patients.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  openModal(`<h3>Înregistrează o plată</h3>
+  <div class="f-row"><label>Client *</label><select id="pay_pid" onchange="payClientChanged()">${opts}</select></div>
+  <div class="f-row"><label>Ședința *</label><select id="pay_sess" onchange="paySessionChanged()"></select></div>
+  ${paymentFields(null, null)}
+  <div class="m-actions">
+    <button class="btn ghost small" onclick="closeModal()">Renunță</button>
+    <button class="btn small" onclick="savePaymentFromAdd()">Salvează plata</button>
+  </div>`);
+  payClientChanged();
+}
+function payClientChanged(){
+  const pid = document.getElementById('pay_pid').value;
+  const my = RAW.sessions.map((s,i)=>({s,i})).filter(x=>String(x.s.pid)===String(pid)).sort((a,b)=>b.s.date-a.s.date);
+  document.getElementById('pay_sess').innerHTML = my.length ? my.map(({s,i})=>
+    `<option value="${i}">${dstr(s.date)} ${esc(s.time||'')} — ${s.paidRaw==='DA'?'plătită':s.paidRaw==='NU'?'neplătită':'fără status'}</option>`).join('')
+    : '<option value="">— nicio ședință —</option>';
+  const pre = my.find(x=>x.s.paidRaw==='NU') || my.find(x=>x.s.paidRaw==='' && x.s.date<=TODAY);
+  if (pre) document.getElementById('pay_sess').value = pre.i;
+  paySessionChanged();
+}
+function paySessionChanged(){
+  const iv = document.getElementById('pay_sess').value;
+  if (iv==='') return;
+  const s = RAW.sessions[+iv];
+  const p = RAW.patients.find(x=>String(x.id)===String(document.getElementById('pay_pid').value));
+  if (!s) return;
+  document.getElementById('pay_status').value = s.paidRaw==='' ? 'DA' : s.paidRaw;
+  document.getElementById('pay_suma').value = s.sum || (p?p.fee:'') || '';
+  document.getElementById('pay_obs').value = s.obs || '';
+}
+async function savePaymentFromAdd(){
+  const iv = document.getElementById('pay_sess').value;
+  if (iv==='') { alert('Clientul nu are nicio ședință — adaugă întâi ședința.'); return; }
+  await savePayment(+iv);
+}
+function payStatusTag(s){
+  const label = s.date>TODAY && s.paidRaw==='' ? '<span class="muted">programată</span>'
+    : s.paidRaw==='DA' ? '<span class="pill p-platit">plătită</span>'
+    : s.paidRaw==='NU' ? '<span class="pill p-neplatit">neplătită</span>'
+    : '<span class="muted">—</span>';
+  return canWrite ? `<span style="cursor:pointer" title="click: editează plata" onclick="paymentForm(${s._i})">${label}</span>` : label;
+}
+
+/* ---- notite ---- */
+function editNotes(){ editingNotes = true; render(); }
+async function saveNotesUI(pid){
+  const p = DB.patients.find(x=>String(x.id)===String(pid)); if (!p) return;
+  const text = document.getElementById('notesArea').value;
+  if (await saveNotesFile(p, text)) { editingNotes = false; render(); toast('Notițe salvate 📓'); }
+}
+function cancelNotes(){ editingNotes = false; render(); }
+function addQuickNote(pid){
+  const p = DB.patients.find(x=>String(x.id)===String(pid)); if (!p) return;
+  const existing = DB.notes[p.key] || ('# Notițe — ' + p.name + '\n');
+  const header = '\n## ' + dstr(TODAY) + ' — Ședința ' + (p.count || '') + '\n';
+  const lines = existing.split('\n');
+  let idx = lines.findIndex(l=>l.startsWith('# '));
+  idx = idx === -1 ? 0 : idx + 1;
+  lines.splice(idx, 0, header.trimEnd(), '', '');
+  DB.notes[p.key] = lines.join('\n');
+  editingNotes = true; render();
+  const ta = document.getElementById('notesArea');
+  const pos = lines.slice(0, idx+1).join('\n').length + 1;
+  ta.focus(); ta.setSelectionRange(pos, pos);
+}
+
+async function reload(){
+  editingNotes = false; editingInfo = false;
+  if (dirHandle) await loadFromHandle();
+  else { document.getElementById('welcome').style.display='flex'; document.getElementById('app').classList.remove('on'); }
+  toast('Date reîncărcate ↻');
+}
+
+/* ============ navigare & randare ============ */
+function nav(v, p){ view = v; currentPatient = p ?? null; editingNotes = false; editingInfo = false; render(); window.scrollTo(0,0); }
+function monthNav(d){ selM += d; if (selM < 0) { selM = 11; selY--; } if (selM > 11) { selM = 0; selY++; } render(); }
+function monthSetM(m){ selM = +m; render(); }
+function monthSetY(y){ selY = +y; render(); }
+function monthToday(){ selM = TODAY.getMonth(); selY = TODAY.getFullYear(); render(); }
+function render(){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  const m = document.getElementById('main');
+  const banner = canWrite ? '' : '<div class="ro-banner">👁️ Mod doar-citire — pentru a edita din aplicație deschide Zena în Chrome sau Edge și alege folderul cu butonul principal.</div>';
+  if (view==='dashboard') m.innerHTML = banner + rDashboard();
+  else if (view==='patients') { m.innerHTML = banner + rPatients(); hookSearch(); }
+  else if (view==='calendar') m.innerHTML = banner + `<div class="topbar"><h2>Calendar</h2>${canWrite?'<button class="btn small" onclick="sessionForm()">＋ Ședință</button>':''}</div>` + rMonth();
+  else if (view==='payments') m.innerHTML = banner + rPayments();
+  else if (view==='patient') m.innerHTML = banner + rPatient(currentPatient);
+}
+
+/* ---- alerte ---- */
+function getAlerts(){
+  const a = [];
+  for (const p of DB.patients) {
+    if (norm(p.status)!=='activ') continue;
+    if (!p.next) a.push({p, msg:'nu are nicio ședință programată'});
+    else if (p.last && daysBetween(p.last.date, TODAY) > 21 && +p.next.date !== +TODAY)
+      a.push({p, msg:'nu a mai avut o ședință de ' + daysBetween(p.last.date,TODAY) + ' zile'});
+  }
+  for (const p of DB.patients) if (p.unpaidList.length)
+    a.push({p, msg: p.unpaidList.length + (p.unpaidList.length===1?' ședință neplătită':' ședințe neplătite') + ' (' + money(p.unpaidList.reduce((t,s)=>t+(s.sum||p.fee),0)) + ')'});
+  return a;
+}
+
+/* ---- dashboard ---- */
+function rDashboard(){
+  const act = DB.patients.filter(p=>norm(p.status)==='activ');
+  const todayList = DB.patients.flatMap(p=>p.todayS.map(s=>({p,s}))).sort((a,b)=>String(a.s.time).localeCompare(b.s.time));
+  const month = TODAY.getMonth(), yr = TODAY.getFullYear();
+  const incasat = RAW.sessions.filter(s=>s.paidRaw==='DA' && s.date.getMonth()===month && s.date.getFullYear()===yr).reduce((t,s)=>t+s.sum,0);
+  const alerts = getAlerts();
+  const withAction = DB.patients.filter(p=>p.action);
+  const hello = new Date().getHours() < 12 ? 'Bună dimineața' : new Date().getHours() < 18 ? 'Bună ziua' : 'Bună seara';
+  return `
+  <div class="topbar"><div><h2 style="font-weight:500">${hello} 🌿</h2>
+  <div class="muted" style="margin-top:4px">${fmtDate(TODAY)}</div></div>
+  ${canWrite?`<div style="display:flex;gap:10px"><button class="btn subtle small" onclick="sessionForm()">＋ Ședință</button>
+  <button class="btn small" onclick="patientForm()">＋ Client</button></div>`:''}</div>
+  <div class="grid stats">
+    <div class="stat s-sage"><div class="l">Clienți activi</div><div class="n">${act.length}</div></div>
+    <div class="stat s-lav"><div class="l">Ședințe azi</div><div class="n">${todayList.length}</div></div>
+    <div class="stat s-peach"><div class="l">Încasat luna aceasta</div><div class="n" style="font-size:24px">${money(incasat)}</div></div>
+    <div class="stat s-rose"><div class="l">De urmărit</div><div class="n">${alerts.length + withAction.length}</div></div>
+  </div>
+
+  <div class="section-title">Astăzi</div>
+  ${todayList.length ? `<div class="card" style="padding:10px 24px"><table><tbody>${
+    todayList.map(({p,s})=>`<tr class="click" onclick="nav('patient','${p.id}')">
+      <td style="width:70px"><b>${esc(s.time||'—')}</b></td>
+      <td><span class="avatar" style="background:${avColor(p.name)}">${initials(p.name)}</span>${esc(p.name)}</td>
+      <td>${actionPill(p, true)}</td>
+      <td class="muted">${esc(p.diag)}</td>
+      <td class="muted" style="text-align:right">ședința nr. ${p.count}</td></tr>`).join('')
+  }</tbody></table></div>` : `<div class="card empty">Nicio ședință programată azi. Respiră. 🍃</div>`}
+
+  <div class="section-title">Calendar</div>
+  ${rMonth()}
+
+  <div class="section-title">De făcut</div>
+  ${withAction.length ? withAction.map(p=>`<div class="alert" style="border-left-color:${esc(actColor(p.action))}" onclick="nav('patient','${p.id}')">
+      <span class="act-pill" style="background:${esc(actColor(p.action))};cursor:default">${esc(p.action)}</span>
+      <div><b>${esc(p.name)}</b> <span class="muted" style="font-size:12.5px">${esc(p.phone)}</span></div></div>`).join('')
+    : `<div class="card empty">Nicio acțiune setată. Adaugi una din dreptul clientului. 🍃</div>`}
+
+  <div class="section-title">De urmărit</div>
+  ${alerts.length ? alerts.map(a=>`<div class="alert" onclick="nav('patient','${a.p.id}')">
+      <span>☝️</span><div><b>${esc(a.p.name)}</b> — ${a.msg}</div></div>`).join('')
+    : `<div class="card empty">Totul e în ordine. ✨</div>`}`;
+}
+
+/* ---- calendar lunar ---- */
+function rMonth(){
+  const yearsSet = new Set([TODAY.getFullYear()-1, TODAY.getFullYear(), TODAY.getFullYear()+1, selY]);
+  RAW.sessions.forEach(s=>yearsSet.add(s.date.getFullYear()));
+  const years = [...yearsSet].sort();
+  const first = new Date(selY, selM, 1);
+  const startDow = (first.getDay()+6)%7;
+  const daysIn = new Date(selY, selM+1, 0).getDate();
+  const dows = ['Lu','Ma','Mi','Jo','Vi','Sâ','Du'];
+  let html = `<div class="cal-head">
+    <button class="navb" onclick="monthNav(-1)">◀</button>
+    <select class="cal-sel" onchange="monthSetM(this.value)">${MONTHS.map((n,i)=>`<option value="${i}" ${i===selM?'selected':''}>${n}</option>`).join('')}</select>
+    <select class="cal-sel" onchange="monthSetY(this.value)">${years.map(y=>`<option ${y===selY?'selected':''}>${y}</option>`).join('')}</select>
+    <button class="navb" onclick="monthNav(1)">▶</button>
+    ${(selM!==TODAY.getMonth()||selY!==TODAY.getFullYear())?'<button class="btn ghost small" onclick="monthToday()">Azi</button>':''}
+  </div>
+  <div class="dowrow">${dows.map(d=>`<div>${d}</div>`).join('')}</div>
+  <div class="month">`;
+  for (let i=0;i<startDow;i++) html += '<div class="mday blank"></div>';
+  for (let day=1;day<=daysIn;day++){
+    const d = new Date(selY, selM, day);
+    const items = DB.patients.flatMap(p=>p.sessions.filter(s=>+s.date===+d).map(s=>({p,s}))).sort((a,b)=>String(a.s.time).localeCompare(b.s.time));
+    const cls = +d===+TODAY ? 'today' : d<TODAY ? 'past' : '';
+    html += `<div class="mday ${cls}"><div class="dn">${day}</div>` +
+      items.map(({p,s})=>`<div class="sess${norm(p.status)==='provizoriu'?' prov':''}" title="${esc(s.time)} ${esc(p.name)}${norm(p.status)==='provizoriu'?' · provizoriu':''}" onclick="nav('patient','${p.id}')"><b>${esc(s.time||'')}</b>${esc(p.name)}</div>`).join('') +
+      (canWrite && +d >= +TODAY ? `<button class="addday" title="Adaugă ședință" onclick="sessionForm(null,'${isoDate(d)}')">＋</button>` : '') +
+      '</div>';
+  }
+  return html + '</div>';
+}
+
+/* ---- lista clienti ---- */
+function rPatients(){
+  return `<div class="topbar"><h2>Clienți</h2>${canWrite?'<button class="btn small" onclick="patientForm()">＋ Client nou</button>':''}</div>
+  <div class="topbar">
+    <input class="search" id="q" placeholder="Caută după nume sau diagnostic…">
+    <div class="tabs" id="statusTabs">
+      ${['Toți','Activ','Provizoriu','Pauză','Încheiat'].map((t,i)=>`<button class="tab ${i===0?'active':''}" data-f="${t}">${t}</button>`).join('')}
+    </div>
+  </div>
+  <div class="card" style="padding:6px 20px" id="pTableWrap">${pTable(DB.patients)}</div>`;
+}
+function pTable(list){
+  if (!list.length) return '<div class="empty">Niciun client găsit.</div>';
+  return `<table><thead><tr><th>Client</th><th>De făcut</th><th>Diagnostic</th><th>Ședințe</th><th>Ultima</th><th>Următoarea</th><th>Status</th></tr></thead><tbody>` +
+  list.map(p=>`<tr class="click" onclick="nav('patient','${p.id}')">
+    <td><span class="avatar" style="background:${avColor(p.name)}">${initials(p.name)}</span><b>${esc(p.name)}</b></td>
+    <td>${actionPill(p, true)}</td>
+    <td class="muted">${esc(p.diag)}</td>
+    <td>${p.count}</td>
+    <td>${fmtShort(p.last?.date)}</td>
+    <td>${p.next ? `<b>${fmtShort(p.next.date)}</b> <span class="muted">${esc(p.next.time||'')}</span>` : '<span class="muted">—</span>'}</td>
+    <td><span class="pill p-${norm(p.status)}">${esc(p.status)}</span></td></tr>`).join('') + '</tbody></table>';
+}
+function hookSearch(){
+  const q = document.getElementById('q'); let filt = 'Toți';
+  const apply = () => {
+    let list = DB.patients;
+    if (filt!=='Toți') list = list.filter(p=>norm(p.status)===norm(filt));
+    const t = norm(q.value);
+    if (t) list = list.filter(p=>norm(p.name).includes(t)||norm(p.diag).includes(t));
+    document.getElementById('pTableWrap').innerHTML = pTable(list);
+  };
+  q.addEventListener('input', apply);
+  document.getElementById('statusTabs').addEventListener('click', e=>{
+    if (!e.target.dataset.f) return;
+    filt = e.target.dataset.f;
+    document.querySelectorAll('#statusTabs .tab').forEach(b=>b.classList.toggle('active', b===e.target));
+    apply();
+  });
+}
+
+/* ---- plati ---- */
+function rPayments(){
+  const month = TODAY.getMonth(), yr = TODAY.getFullYear();
+  const paidM = RAW.sessions.filter(s=>s.paidRaw==='DA' && s.date.getMonth()===month && s.date.getFullYear()===yr);
+  const unpaidAll = DB.patients.flatMap(p=>p.unpaidList.map(s=>({p,s})));
+  const restante = unpaidAll.reduce((t,{p,s})=>t+(s.sum||p.fee),0);
+  return `<div class="topbar"><h2>Plăți</h2>${canWrite?'<button class="btn small" onclick="paymentAdd()">＋ Plată</button>':''}</div>
+  <div class="grid stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat s-sage"><div class="l">Încasat în ${MONTHS_LC[month]}</div><div class="n" style="font-size:24px">${money(paidM.reduce((t,s)=>t+s.sum,0))}</div></div>
+    <div class="stat s-lav"><div class="l">Ședințe plătite (luna)</div><div class="n">${paidM.length}</div></div>
+    <div class="stat s-rose"><div class="l">Restanțe totale</div><div class="n" style="font-size:24px">${money(restante)}</div></div>
+  </div>
+  <div class="section-title">Ședințe neplătite</div>
+  ${unpaidAll.length ? `<div class="card" style="padding:6px 20px"><table><thead><tr><th>Client</th><th>Data ședinței</th><th>Sumă</th><th>Observații</th>${canWrite?'<th></th>':''}</tr></thead><tbody>${
+    unpaidAll.map(({p,s})=>`<tr>
+      <td class="click" onclick="nav('patient','${p.id}')"><b>${esc(p.name)}</b></td><td>${fmtShort(s.date)}</td><td><b>${money(s.sum||p.fee)}</b></td><td class="muted">${esc(s.obs)}</td>
+      ${canWrite?`<td style="text-align:right;white-space:nowrap"><button class="btn subtle small" onclick="togglePaid(${s._i})">✓ Încasată</button> <button class="iconbtn" title="editează plata" onclick="paymentForm(${s._i})">✏️</button></td>`:''}</tr>`).join('')
+  }</tbody></table></div>` : '<div class="card empty">Nicio restanță. ✨</div>'}`;
+}
+
+/* ---- pagina clientului ---- */
+function rPatient(id){
+  const p = DB.patients.find(x=>String(x.id)===String(id));
+  if (!p) return '<div class="empty">Clientul nu a fost găsit.</div>';
+  const notesMd = DB.notes[p.key];
+  const fList = DB.files[p.key] || [];
+  return `<button class="back" onclick="nav('patients')">← Înapoi la clienți</button>
+  <div class="p-head">
+    <span class="avatar" style="background:${avColor(p.name)}">${initials(p.name)}</span>
+    <div style="flex:1"><h2>${esc(p.name)} <span class="pill p-${norm(p.status)}" style="vertical-align:middle;margin-left:6px">${esc(p.status)}</span>
+    <span style="vertical-align:middle;margin-left:4px">${actionPill(p, false)}</span></h2>
+    <div class="diag">${esc(p.diag)}</div></div>
+    ${canWrite?`<div style="display:flex;gap:8px">
+      <button class="btn subtle small" onclick="sessionForm('${p.id}')">＋ Ședință</button>
+      <button class="btn ghost small" onclick="patientFormById('${p.id}')">✏️ Editează</button></div>`:''}
+  </div>
+  <div class="detail-grid">
+    <div>
+      <div class="card">
+        <div class="section-title" style="margin-top:0;justify-content:space-between">ℹ️ Date client
+          ${canWrite && !editingInfo ? `<button class="btn ghost small" onclick="editInfo()">✏️ Editează</button>` : ''}
+        </div>
+        ${editingInfo ? `
+        <div class="f-row"><label>Diagnostic scurt</label><input id="i_diag" value="${esc(p.diag)}"></div>
+        <div class="f-2">
+          <div class="f-row"><label>În terapie din</label><input id="i_start" type="date" value="${isoDate(p.start)}"></div>
+          <div class="f-row"><label>Tarif (lei/ședință)</label><input id="i_tarif" type="number" value="${p.fee||''}"></div>
+        </div>
+        <div class="f-2">
+          <div class="f-row"><label>Telefon</label><input id="i_tel" value="${esc(p.phone)}"></div>
+          <div class="f-row"><label>Email</label><input id="i_email" value="${esc(p.email)}"></div>
+        </div>
+        <div class="f-row"><label>Observații</label><textarea id="i_obs" rows="3">${esc(p.obs)}</textarea></div>
+        <div class="m-actions">
+          <button class="btn ghost small" onclick="cancelInfo()">Renunță</button>
+          <button class="btn small" onclick="saveInfoUI('${p.id}')">💾 Salvează</button>
+        </div>` : `
+        <div class="info-row"><span class="k">Următoarea ședință</span><b>${p.next ? fmtShort(p.next.date)+' '+esc(p.next.time||'') : '—'}</b></div>
+        <div class="info-row"><span class="k">Ultima ședință</span><span>${fmtShort(p.last?.date)}</span></div>
+        <div class="info-row"><span class="k">Ședințe până acum</span><span>${p.count}</span></div>
+        <div class="info-row"><span class="k">În terapie din</span><span>${fmtShort(p.start)}</span></div>
+        <div class="info-row"><span class="k">Tarif</span><span>${money(p.fee)}</span></div>
+        <div class="info-row"><span class="k">Telefon</span><span>${esc(p.phone)||'—'}</span></div>
+        <div class="info-row"><span class="k">Email</span><span>${esc(p.email)||'—'}</span></div>
+        <div class="info-row"><span class="k">Observații</span><span ${!p.obs?'class="muted"':''}>${esc(p.obs)||'—'}</span></div>`}
+      </div>
+      <div class="section-title" style="justify-content:space-between">🎯 Temă activă
+        ${canWrite?`<button class="btn ghost small" onclick="themeForm('${p.id}')">＋ Temă</button>`:''}
+      </div>
+      <div class="card">${themeBlock(p)}</div>
+      <div class="section-title" style="justify-content:space-between">📈 Evoluție chestionare
+        ${canWrite?`<button class="btn ghost small" onclick="quizForm('${p.id}')">＋ Scor</button>`:''}
+      </div>
+      <div class="card">${quizBlock(p)}</div>
+      <div class="section-title">Istoric ședințe</div>
+      <div class="card" style="padding:6px 18px;max-height:340px;overflow:auto"><table><tbody>
+        ${p.sessions.slice().reverse().map(s=>`<tr>
+          <td>${fmtShort(s.date)} <span class="muted">${esc(s.time||'')}</span></td>
+          <td>${payStatusTag(s)}</td>
+          <td class="muted" style="font-size:12.5px">${esc(s.obs)}</td>
+          ${canWrite?`<td style="text-align:right;white-space:nowrap">
+            ${s.date<=TODAY?`<button class="iconbtn" title="${s.paidRaw==='DA'?'marchează neplătită':'marchează plătită'}" onclick="togglePaid(${s._i})">${s.paidRaw==='DA'?'↺':'✓'}</button>`:''}
+            <button class="iconbtn" title="șterge ședința" onclick="delSession(${s._i})">🗑</button></td>`:''}</tr>`).join('')
+          || '<tr><td class="empty">Nicio ședință.</td></tr>'}
+      </tbody></table></div>
+      ${fList.length?`<div class="section-title">Fișe & materiale <span class="muted" style="font-size:12px;font-weight:400">(în folderul clientului)</span></div>
+      <ul class="files">${fList.map(f=>`<li>📎 ${esc(f)}</li>`).join('')}</ul>`:''}
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-top:0;justify-content:space-between">📓 Notebook
+        ${canWrite && !editingNotes ? `<span style="display:flex;gap:8px">
+          <button class="btn subtle small" onclick="addQuickNote('${p.id}')">＋ Notiță azi</button>
+          <button class="btn ghost small" onclick="editNotes()">✏️ Editează</button></span>` : ''}
+      </div>
+      ${editingNotes ?
+        `<textarea class="notes-edit" id="notesArea">${esc(notesMd || ('# Notițe — '+p.name+'\n\n'))}</textarea>
+         <div class="m-actions">
+           <button class="btn ghost small" onclick="cancelNotes()">Renunță</button>
+           <button class="btn small" onclick="saveNotesUI('${p.id}')">💾 Salvează notițele</button>
+         </div>
+         <div class="hint">Sfat: titlurile cu ## (ex. <b>## ${dstr(TODAY)} — Ședința ${p.count||1}</b>) devin secțiuni formatate.</div>`
+      : notesMd ? `<div class="notes">${marked.parse(notesMd)}</div>`
+      : `<div class="empty">Nu există încă notițe.${canWrite?'<br><button class="btn small" style="margin-top:14px" onclick="editNotes()">Scrie prima notiță</button>':`<br><span style="font-size:12.5px">Creează fișierul <b>Clienti / ${esc(p.name)} / notite.md</b>.</span>`}</div>`}
+    </div>
+  </div>`;
+}
+function patientFormById(id){ patientForm(DB.patients.find(x=>String(x.id)===String(id))); }
+</script>
+</body>
+</html>
